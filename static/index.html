@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopNest Store</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#" data-view="shop">ShopNest<span>.</span></a>
+      <nav>
+        <a href="#" data-view="shop">Shop</a>
+        <a href="#" data-view="orders" class="auth-only" hidden>My Orders</a>
+        <a href="#" data-view="admin" class="admin-only" hidden>Admin</a>
+        <button class="btn" id="loginBtn">Login</button>
+        <span class="user-chip auth-only" hidden><span id="userName"></span> <button class="link" id="logoutBtn">Logout</button></span>
+        <button class="btn btn-primary cart-btn" id="cartBtn">Cart <span id="cartCount">0</span></button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- SHOP -->
+  <section id="view-shop" class="view">
+    <div class="hero"><div class="container">
+      <p class="eyebrow">Electronics & Accessories</p>
+      <h1>Gear you'll actually use.</h1>
+      <p class="lead">Browse the catalog, add to cart and check out in seconds.</p>
+    </div></div>
+    <div class="container">
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="Search products..." />
+        <div class="filters" id="filters"></div>
+      </div>
+      <div class="grid" id="productGrid"></div>
+      <p class="empty" id="emptyShop" hidden>No products found.</p>
+    </div>
+  </section>
+
+  <!-- MY ORDERS -->
+  <section id="view-orders" class="view container" hidden>
+    <h2 class="page-title">My Orders</h2>
+    <div id="myOrders"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="view-admin" class="view container" hidden>
+    <h2 class="page-title">Admin Dashboard</h2>
+    <div class="stats" id="stats"></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="products">Products</button>
+      <button class="tab" data-tab="orders">Orders</button>
+    </div>
+    <div id="tab-products">
+      <div class="row-between"><h3>Products</h3><button class="btn btn-primary" id="newProductBtn">+ New Product</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="adminProducts"></tbody></table></div>
+    </div>
+    <div id="tab-orders" hidden>
+      <h3>All Orders</h3>
+      <div id="adminOrders"></div>
+    </div>
+  </section>
+
+  <footer class="footer"><div class="container">© <span id="year"></span> ShopNest · Demo store, no real payments</div></footer>
+
+  <!-- CART DRAWER -->
+  <aside class="drawer" id="cartDrawer" aria-hidden="true">
+    <div class="drawer-head"><h3>Your Cart</h3><button class="link" id="closeCart">✕</button></div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="drawer-foot">
+      <div class="row-between total"><span>Total</span><strong id="cartTotal">₹0</strong></div>
+      <button class="btn btn-primary full" id="checkoutBtn">Checkout</button>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay" hidden></div>
+
+  <!-- AUTH -->
+  <dialog id="authDialog">
+    <form id="authForm">
+      <h2 id="authTitle">Login</h2>
+      <label class="register-only" hidden>Name<input name="name" /></label>
+      <label>Email<input name="email" type="email" required /></label>
+      <label>Password<input name="password" type="password" required minlength="6" /></label>
+      <p class="error" id="authError"></p>
+      <button class="btn btn-primary full" type="submit" id="authSubmit">Login</button>
+      <p class="muted center"><span id="authSwitchText">New here?</span> <button type="button" class="link" id="authSwitch">Create an account</button></p>
+      <button type="button" class="link close-x" data-close>✕</button>
+    </form>
+  </dialog>
+
+  <!-- CHECKOUT -->
+  <dialog id="checkoutDialog">
+    <form id="checkoutForm">
+      <h2>Checkout</h2>
+      <label>Full name<input name="shipping_name" required /></label>
+      <label>Address<textarea name="shipping_address" rows="3" required></textarea></label>
+      <label>Phone<input name="phone" required pattern="[0-9+ -]{7,15}" /></label>
+      <label>Payment<select name="payment_method"><option>Cash on Delivery</option></select></label>
+      <div class="row-between total"><span>Order total</span><strong id="checkoutTotal"></strong></div>
+      <p class="error" id="checkoutError"></p>
+      <button class="btn btn-primary full" type="submit">Place Order</button>
+      <button type="button" class="link close-x" data-close>✕</button>
+    </form>
+  </dialog>
+
+  <!-- PRODUCT EDITOR -->
+  <dialog id="productDialog">
+    <form id="productForm">
+      <h2 id="productFormTitle">New Product</h2>
+      <input type="hidden" name="id" />
+      <label>Name<input name="name" required /></label>
+      <label>Description<textarea name="description" rows="2"></textarea></label>
+      <div class="row">
+        <label>Category<input name="category" value="General" /></label>
+        <label>Price (₹)<input name="price" type="number" min="0" step="0.01" required /></label>
+        <label>Stock<input name="stock" type="number" min="0" value="10" required /></label>
+      </div>
+      <label>Image URL<input name="image_url" type="url" placeholder="https://..." /></label>
+      <label class="check"><input type="checkbox" name="is_active" checked /> Visible in store</label>
+      <p class="error" id="productError"></p>
+      <button class="btn btn-primary full" type="submit">Save</button>
+      <button type="button" class="link close-x" data-close>✕</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/static/script.js"></script>
+</body>
+</html>
