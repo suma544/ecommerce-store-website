@@ -31,8 +31,10 @@ python app.py
 ```
 Open http://localhost:5000
 
-A first admin account is created on start from `ADMIN_EMAIL` / `ADMIN_PASSWORD`
-(defaults `admin@shop.com` / `admin123` — **change these in production**).
+**Admin account:** the **first account registered** on a fresh database becomes the Admin — sign up right after deploying.
+Optionally set `ADMIN_EMAIL` + `ADMIN_PASSWORD` to create an admin automatically on start.
+
+`SECRET_KEY` (signs login tokens) is optional: if not set, a unique key is derived from the private `DATABASE_URL`.
 
 ## Google Colab
 Open `colab/ShopNest_Store_Generator.ipynb` in Colab and choose **Runtime → Run all**.
@@ -65,12 +67,11 @@ Set `DATABASE_URL` (see `.env.example`):
 Send the token as `Authorization: Bearer <token>`.
 
 ## Deploy
-**Vercel:** import the GitHub repo at vercel.com → add `DATABASE_URL`, `SECRET_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` env variables → Deploy.
+**Vercel:** import the GitHub repo at vercel.com → connect a Postgres database (Storage → Neon, sets `DATABASE_URL`) → Deploy → register the first (admin) account.
 
 **Heroku:**
 ```bash
 heroku create
 heroku addons:create heroku-postgresql:essential-0
-heroku config:set SECRET_KEY=... ADMIN_PASSWORD=...
 git push heroku main
 ```

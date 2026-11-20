@@ -6,6 +6,7 @@ E-Commerce Store - Backend (Flask + SQLAlchemy)
 - Role-based access: "admin" manages products and orders, "user" shops and sees own orders
 - Database: PostgreSQL / MySQL via DATABASE_URL, SQLite fallback for local development
 """
+import hashlib
 import os
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -32,7 +33,16 @@ def database_url() -> str:
 
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"), static_url_path="/static")
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+def secret_key() -> str:
+    """SECRET_KEY env var if set; otherwise derived from the private DATABASE_URL so every deployment is unique."""
+    if os.environ.get("SECRET_KEY"):
+        return os.environ["SECRET_KEY"]
+    if os.environ.get("DATABASE_URL"):
+        return hashlib.sha256(("%s:%s" % (__name__, os.environ["DATABASE_URL"])).encode()).hexdigest()
+    return "dev-secret-change-me"  # local development only
+
+
+app.config["SECRET_KEY"] = secret_key()
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url()
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
@@ -174,10 +184,12 @@ def body():
 def init_db():
     with app.app_context():
         db.create_all()
-        admin_email = os.environ.get("ADMIN_EMAIL", "admin@shop.com").lower()
-        if not User.query.filter_by(email=admin_email).first():
+        # Optional: seed an admin from env vars. Without them, the FIRST account registered becomes the admin.
+        admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+        admin_password = os.environ.get("ADMIN_PASSWORD", "")
+        if admin_email and admin_password and not User.query.filter_by(email=admin_email).first():
             db.session.add(User(name="Store Admin", email=admin_email, role="admin",
-                                password_hash=generate_password_hash(os.environ.get("ADMIN_PASSWORD", "admin123"))))
+                                password_hash=generate_password_hash(admin_password)))
         if Product.query.count() == 0:
             db.session.add_all(Product(name=n, description=d, category=c, price=Decimal(p), stock=s)
                                for n, d, c, p, s in SAMPLE_PRODUCTS)
@@ -206,7 +218,9 @@ def register():
         abort(400, description="Password must be at least 6 characters")
     if User.query.filter_by(email=email).first():
         abort(409, description="Email is already registered")
-    user = User(name=name, email=email, role="user", password_hash=generate_password_hash(password))
+    first_account = User.query.count() == 0
+    user = User(name=name, email=email, role="admin" if first_account else "user",
+                password_hash=generate_password_hash(password))
     db.session.add(user)
     db.session.commit()
     return jsonify(token=make_token(user), user=user.to_dict()), 201
