@@ -25,8 +25,10 @@ TOKEN_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
 def database_url() -> str:
     url = os.environ.get("DATABASE_URL", "").strip()
     if url:
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
+        # Use the psycopg2 driver (in requirements.txt) for plain postgres URLs from Neon / Heroku
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                url = "postgresql+psycopg2://" + url[len(prefix):]
         return url
     folder = "/tmp" if os.environ.get("VERCEL") else BASE_DIR
     return f"sqlite:///{os.path.join(folder, 'store.db')}"
